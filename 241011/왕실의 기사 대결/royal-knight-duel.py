@@ -1,127 +1,98 @@
 from collections import deque
 
+# 전역 변수들을 정의합니다.
+MAX_N = 31
+MAX_L = 41
 dx = [-1, 0, 1, 0]
 dy = [0, 1, 0, -1]
+
+info = [[0 for _ in range(MAX_L)] for _ in range(MAX_L)]
+bef_k = [0 for _ in range(MAX_N)]
+r = [0 for _ in range(MAX_N)]
+c = [0 for _ in range(MAX_N)]
+h = [0 for _ in range(MAX_N)]
+w = [0 for _ in range(MAX_N)]
+k = [0 for _ in range(MAX_N)]
+nr = [0 for _ in range(MAX_N)]
+nc = [0 for _ in range(MAX_N)]
+dmg = [0 for _ in range(MAX_N)]
+is_moved = [False for _ in range(MAX_N)]
+
+
+# 움직임을 시도해봅니다.
+def try_movement(idx, dir):
+    q = deque()
+    is_pos = True
+
+    # 초기화 작업입니다.
+    for i in range(1, n + 1):
+        dmg[i] = 0
+        is_moved[i] = False
+        nr[i] = r[i]
+        nc[i] = c[i]
+
+    q.append(idx)
+    is_moved[idx] = True
+
+    while q:
+        x = q.popleft()
+
+        nr[x] += dx[dir]
+        nc[x] += dy[dir]
+
+        # 경계를 벗어나는지 체크합니다.
+        if nr[x] < 1 or nc[x] < 1 or nr[x] + h[x] - 1 > l or nc[x] + w[x] - 1 > l:
+            return False
+
+        # 대상 조각이 다른 조각이나 장애물과 충돌하는지 검사합니다.
+        for i in range(nr[x], nr[x] + h[x]):
+            for j in range(nc[x], nc[x] + w[x]):
+                if info[i][j] == 1:
+                    dmg[x] += 1
+                if info[i][j] == 2:
+                    return False
+
+        # 다른 조각과 충돌하는 경우, 해당 조각도 같이 이동합니다.
+        for i in range(1, n + 1):
+            if is_moved[i] or k[i] <= 0:
+                continue
+            if r[i] > nr[x] + h[x] - 1 or nr[x] > r[i] + h[i] - 1:
+                continue
+            if c[i] > nc[x] + w[x] - 1 or nc[x] > c[i] + w[i] - 1:
+                continue
+
+            is_moved[i] = True
+            q.append(i)
+
+    dmg[idx] = 0
+    return True
+
+
+# 특정 조각을 지정된 방향으로 이동시키는 함수입니다.
+def move_piece(idx, move_dir):
+    if k[idx] <= 0:
+        return
+
+    # 이동이 가능한 경우, 실제 위치와 체력을 업데이트합니다.
+    if try_movement(idx, move_dir):
+        for i in range(1, n + 1):
+            r[i] = nr[i]
+            c[i] = nc[i]
+            k[i] -= dmg[i]
+
+
+# 입력값을 받습니다.
 l, n, q = map(int, input().split())
-board = [list(map(int, input().split())) for _ in range(l)]
-night_info = [0]
-n_board = [[0 for _ in range(l)] for _ in range(l)]
-damage = 0
-damaged_night= [ 0 for _ in range(n+1)]
-for nights in range(1, n + 1):
-    r, c, h, w, k = map(int, input().split())
-    r -= 1
-    c -= 1
-    night_info.append((r, c, h, w, k))
-    for i in range(r, r + h):
-        for j in range(c, c + w):
-            n_board[i][j] = nights
+for i in range(1, l + 1):
+    info[i][1:] = map(int, input().split())
+for i in range(1, n + 1):
+    r[i], c[i], h[i], w[i], k[i] = map(int, input().split())
+    bef_k[i] = k[i]
 
+for _ in range(q):
+    idx, d = map(int, input().split())
+    move_piece(idx, d)
 
-def in_range(x, y):
-    return 0 <= x < l and 0 <= y < l
-
-
-def night_move(oi, od):
-    r1, c1, h1, w1, k1 = night_info[oi]
-    if k1 <= 0: return False,[],[]
-    visited = [[False for _ in range(l)] for _ in range(l)]
-    queue = deque()
-    can_go = []
-    move_number = []
-    move_number.append(oi)
-    for i1 in range(r1, r1 + h1):
-        for j1 in range(c1, c1 + w1):
-            visited[i1][j1] = True
-            queue.append((i1, j1))
-            can_go.append((oi, i1, j1))
-    while queue:
-        x, y = queue.popleft()
-        nx, ny = x + dx[od], y + dy[od]
-        if in_range(nx, ny) and visited[nx][ny] == False and n_board[nx][ny] == oi:
-            queue.append((nx, ny))
-            can_go.append((nx, ny))
-            visited[nx][ny] = True
-        elif in_range(nx, ny) and visited[nx][ny] == False and board[nx][ny] == 2:
-            return False, [], []
-        elif in_range(nx, ny) and visited[nx][ny] == False and n_board[nx][ny] != oi:
-            if n_board[nx][ny] != 0:  # 빈공간이 아니라면
-                r1, c1, h1, w1, k1 = night_info[n_board[nx][ny]]
-                move_number.append(n_board[nx][ny])
-                for k1 in range(r1, r1 + h1):
-                    for k2 in range(c1, c1 + w1):
-                        queue.append((k1, k2))
-                        visited[k1][k2] = True
-                        can_go.append((n_board[nx][ny], k1, k2))
-        elif not in_range(nx, ny):
-            return False, [], []
-
-    return True, can_go, move_number
-
-
-def moving_night(arr, marr, oi, od):
-    global n_board
-    # arr안에있는녀석들을 od방향으로 밀어줘야한다.
-    t_nboard = [[0 for _ in range(l)] for _ in range(l)]
-
-    for i in range(l):
-        for j in range(l):
-            if not n_board[i][j] in marr:
-                t_nboard[i][j] = n_board[i][j]
-
-    for number, x, y in arr:
-        nx, ny = x + dx[od], y + dy[od]
-        t_nboard[nx][ny] = number
-
-    n_board = [[t_nboard[i][j] for j in range(l)] for i in range(l)]
-    return
-
-
-
-def damaged(m_arr, oi):
-    for i in range(l):
-        for j in range(l):
-            if n_board[i][j] == oi: continue
-            if n_board[i][j] == 0 : continue
-            if not n_board[i][j] in m_arr: continue
-            if board[i][j] == 1 :
-                r1, c1, h1, w1, k1 = night_info[n_board[i][j]]
-                k1 -= 1
-                damaged_night[n_board[i][j]] += 1
-                night_info[n_board[i][j]] = r1, c1, h1, w1, k1
-                if k1 <= 0 : # 맵 밀어줘야한다.
-                    for i1 in range(r1,r1+h1):
-                        for j1 in range(c1,c1+w1):
-                            n_board[i1][j1] = 0
-    return
-
-def update_night_info():
-    checked = []
-    for i in range(l):
-        for j in range(l):
-            if n_board[i][j] == 0 : continue
-            if not n_board[i][j] in checked:
-                checked.append(n_board[i][j])
-                r1, c1, h1, w1, k1 = night_info[n_board[i][j]]
-                night_info[n_board[i][j]] = i, j, h1, w1, k1
-    return
-
-
-def all_live_night_damaged():
-    count = 0
-    for night_num in range(1,n+1):
-        r1, c1, h1, w1, k1 = night_info[night_num]
-        if k1 > 0 :
-            count += damaged_night[night_num]
-    return count
-
-
-for order in range(q):
-    oi, od = map(int, input().split())
-    possible, can_arr, m_arr = night_move(oi, od)
-    if possible:
-        moving_night(can_arr, m_arr, oi, od)  # 움직일수있는애들 반영하기.
-        update_night_info()
-        damaged(m_arr, oi)
-
-print(all_live_night_damaged())
+# 결과를 계산하고 출력합니다.
+ans = sum([bef_k[i] - k[i] for i in range(1, n + 1) if k[i] > 0])
+print(ans)
