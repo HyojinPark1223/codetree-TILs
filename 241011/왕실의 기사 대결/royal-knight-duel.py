@@ -1,7 +1,5 @@
-import sys
 from collections import deque
 
-sys.stdin = open('왕기대.txt', 'r')
 dx = [-1, 0, 1, 0]
 dy = [0, 1, 0, -1]
 l, n, q = map(int, input().split())
