@@ -1,3 +1,6 @@
+import sys
+sys.stdin = open("input.txt", 'r')
+
 T = int(input())
 
 # value: key
@@ -25,7 +28,7 @@ def call_delete(name):
     res_table = {v:k for k,v in table.items()}
     find_value = res_table.get(name)
     del table[find_value]
-    return 1
+    return find_value
 
 def call_rank(value):
     global table
