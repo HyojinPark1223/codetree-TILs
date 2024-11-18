@@ -1,6 +1,3 @@
-import sys
-sys.stdin = open("input.txt", 'r')
-
 T = int(input())
 
 # value: key
@@ -23,7 +20,7 @@ def call_insert(name, value):
 def call_delete(name):
     global table
 
-    if name not in table.items():
+    if name not in table.values():
         return 0
     res_table = {v:k for k,v in table.items()}
     find_value = res_table.get(name)
